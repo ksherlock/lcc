@@ -148,6 +148,7 @@ control(Tokenrow *trp)
 		break;
 
 	case KPRAGMA:
+		dopragma(trp);
 		return;
 
 	case KIFDEF:
@@ -238,7 +239,12 @@ control(Tokenrow *trp)
 		break;
 
 	case KINCLUDE:
-		doinclude(trp);
+		doinclude(trp, Include);
+		trp->lp = trp->bp;
+		return;
+
+	case KIMPORT:
+		doinclude(trp, Import);
 		trp->lp = trp->bp;
 		return;
 

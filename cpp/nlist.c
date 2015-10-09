@@ -26,6 +26,7 @@ struct	kwtab {
 	"else",		KELSE,		ISKW,
 	"endif",	KENDIF,		ISKW,
 	"include",	KINCLUDE,	ISKW,
+	"import",	KIMPORT,	ISKW,
 	"define",	KDEFINE,	ISKW,
 	"undef",	KUNDEF,		ISKW,
 	"line",		KLINE,		ISKW,

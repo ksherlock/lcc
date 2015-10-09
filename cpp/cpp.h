@@ -27,7 +27,7 @@ enum toktype { END, UNCLASS, NAME, NUMBER, STRING, CCON, NL, WS, DSHARP,
 
 enum kwtype { KIF, KIFDEF, KIFNDEF, KELIF, KELSE, KENDIF, KINCLUDE, KDEFINE,
 		KUNDEF, KLINE, KERROR, KWARNING, KPRAGMA, KDEFINED,
-		KLINENO, KFILE, KDATE, KTIME, KSTDC, KEVAL };
+		KLINENO, KFILE, KDATE, KTIME, KSTDC, KEVAL, KIMPORT };
 
 #define	ISDEFINED	01	/* has #defined value */
 #define	ISKW		02	/* is PP keyword */
@@ -40,6 +40,7 @@ enum kwtype { KIF, KIFDEF, KIFNDEF, KELIF, KELSE, KENDIF, KINCLUDE, KDEFINE,
 #define	XPWS	1		/* token flag: white space to assure token sep. */
 
 enum { Notinmacro, Inmacro };
+enum { Include, Import };
 
 typedef struct token {
 	unsigned char	type;
@@ -113,8 +114,9 @@ Nlist	*lookup(Token *, int);
 void	control(Tokenrow *);
 void	dodefine(Tokenrow *);
 void	doadefine(Tokenrow *, int);
-void	doinclude(Tokenrow *);
+void	doinclude(Tokenrow *, int);
 void	doif(Tokenrow *, enum kwtype);
+void	dopragma(Tokenrow *);
 void	expand(Tokenrow *, Nlist *, int);
 void	builtin(Tokenrow *, int);
 int	gatherargs(Tokenrow *, Tokenrow **, int, int *);

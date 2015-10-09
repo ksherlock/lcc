@@ -1,14 +1,89 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "cpp.h"
 
 Includelist	includelist[NINCLUDE];
 
+struct hash_entry {
+	const char *name;
+	unsigned long hash;
+	struct hash_entry *next;
+};
+
+#define HASH_TABLE_SIZE 32
+static struct hash_entry *hash_table[HASH_TABLE_SIZE] = {};
+
+
+unsigned long hash ( const unsigned char *s )
+{
+	unsigned long   h = 0, high;
+	while ( *s ) {
+		h = ( h << 4 ) + *s++;
+		if ( high = h & 0xF0000000 )
+			h ^= high >> 24;
+		h &= ~high;
+	}
+	return h;
+}
+
+/*
+ * returns 1 if in hash table
+ * returns 0 if not.
+ */
+static int check_hash(const char *cp, int insert) {
+	struct hash_entry *e;
+	unsigned long h;
+	unsigned index;
+
+	char buffer[PATH_MAX];
+
+	cp = realpath(cp, buffer);
+	if (!cp) return 0;
+
+	h = hash(cp);
+
+	index = h % HASH_TABLE_SIZE;
+	e = hash_table[index];
+
+	while (e) {
+		if (e->hash == h && strcmp(e->name, cp) == 0) return 1;
+		e = e->next;
+	}
+	if (insert) {
+		e = domalloc(sizeof(struct hash_entry));
+		e->name = strdup(cp);
+		e->hash = h;
+		e->next = hash_table[index];
+		hash_table[index] = e;
+	}
+	return 0;
+}
+
 extern char	*objname;
 
 void
-doinclude(Tokenrow *trp)
+dopragma(Tokenrow *trp)
+{
+	/* checks #pragma once, ignores all others. */
+
+	trp->tp += 1;
+
+	if (trp->tp->type==NAME 
+		&& trp->lp - trp->bp == 4 
+		&& strncmp(trp->tp->t, "once", trp->tp->len) == 0
+		&& cursource->fd) {
+		check_hash(cursource->filename, 1);
+		trp->tp += 1;
+		setempty(trp);
+	}
+
+}
+
+
+void
+doinclude(Tokenrow *trp, int type)
 {
 	char fname[256], iname[256];
 	Includelist *ip;
@@ -67,6 +142,11 @@ doinclude(Tokenrow *trp)
 		fwrite("\n",1,1,stdout);
 	}
 	if (fd != NULL) {
+		/* check if imported/pragma onced. */
+		if (check_hash(iname, type == Import)) {
+			fclose(fd);
+			return;
+		}
 		if (++incdepth > 10)
 			error(FATAL, "#include too deeply nested");
 		setsource((char*)newstring((uchar*)iname, strlen(iname), 0), fd, NULL);
